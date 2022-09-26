@@ -1,4 +1,5 @@
 DEFAULT_TARGET=dev
 TARGET=${1:-$DEFAULT_TARGET}
 
-echo "TARGET_ENV: $TARGET $2"
+echo "TARGET_ENV: $TARGET"
+webpack serve --env development
