@@ -1,9 +1,16 @@
 const path = require("path");
 const webpack = require('webpack');
 const HtmlWebpackPlugin = require("html-webpack-plugin");
+const dotenv = require('dotenv');
 
 module.exports = (env) => {
-  console.log('env', env);
+  console.log('env!', env)
+
+  dotenv.config();
+  dotenv.config({
+    path: `${env}.env`
+  })
+
   return {
     name: "webpack-test",
     mode: "development",
@@ -28,7 +35,10 @@ module.exports = (env) => {
     plugins: [
       new webpack.ProvidePlugin({
         React: "react",
-    }),
+      }),
+      new webpack.EnvironmentPlugin([
+        'COMMON_VAR', 'ENV_VAR',
+      ]),
       new HtmlWebpackPlugin({
         template: "./public/index.html",
       }),
