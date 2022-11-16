@@ -1,71 +1,38 @@
-import React, { useEffect, useRef, useMemo } from 'react';
+import React, { useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 // import * as ReactDOMClient from 'react-dom/client';
 
-import ToastContainer from '../ToastContainer';
+import ToastContainer from './components/ToastContainer';
+import { ToastChildren, ToastHookOptions, ToastHookReturns } from './types';
+import { getRootStyles } from './utils';
 
-const TOAST_ROOT_ID = 'toast-root';
-
-const getAttributes = (position: ToastPosition, px = 10): object => {
-  const offset = `${px}px`;
-
-  switch (position) {
-    default: 
-    case 'tl':
-      return { top: offset, left: offset };
-    case 'tr':
-      return { top: offset, right: offset };
-    case 'tc':
-      return { top: offset, left: '50%', transform: 'translateX(-50%)' };
-    case 'bl':
-      return { bottom: offset, left: offset };
-    case 'br':
-      return { bottom: offset, right: offset };
-    case 'bc':
-      return { bottom: offset, left: '50%', transform: 'translateX(-50%)' }; 
-  }
-}
-
-type ToastPosition = 'tl' | 'tr' | 'tc' | 'bl' | 'br' | 'bc';
-
-interface Options {
-  position?: ToastPosition;
-  delay?: number;
-  removeByRoute?: boolean;
-};
-
-interface Returns {
-  toast: (child: string | React.ReactNode | React.ReactNode[]) => void;
-}
+const TOAST_ROOT_ID = 'root-single-toast';
 
 const useSingleToast = ({
-  position = 'bl',
-  delay = 4000,
+  position = 'tr',
+  offset = 20,
+  animation = 'zoom',
+  revealTime = 4000,
+  transformTime = 300,
   removeByRoute = true,
-}: Options): Returns => {
-  let rootElement: HTMLDivElement | null = null;
+}: ToastHookOptions): ToastHookReturns => {
+  let rootElement: HTMLElement | null = null;
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // // React 18 Migration
   // let rootReactDOM: ReactDOMClient.Root | null = null;
 
   useEffect(() => {
-    renderRoot();
-
     return () => {
-      if (removeByRoute) unmountRoot();
+      if (rootElement && removeByRoute) unmountRoot();
     }
-  }, [removeByRoute, position])
+  }, [position, offset, revealTime])
 
-  const renderRoot = () => {
-    rootElement = document.createElement('div');
+  const initRoot = () => {
+    console.log('initRoot')
+    rootElement = document.getElementById(TOAST_ROOT_ID) || document.createElement('div');
     rootElement.setAttribute('id', TOAST_ROOT_ID);
-    console.log(Object.entries(getAttributes(position)))
-    rootElement.style.position = "fixed"
-    Object.entries(getAttributes(position)).forEach(([key, value]) => (rootElement as HTMLDivElement).style[key as string] = value);
-
-    // rootElement.style.top = "10px"
-    // rootElement.style.right = "10px"
+    Object.entries(getRootStyles(position, offset)).forEach(([key, value]) => (rootElement as HTMLElement).style[key as any] = value);
     document.body.appendChild(rootElement);
     document.body.style.minHeight = '100vh';
 
@@ -74,25 +41,27 @@ const useSingleToast = ({
   }
 
   const unmountRoot = () => {
-    document.body.removeChild(rootElement as HTMLDivElement);
+    console.log('unmountRoot')
+    if (rootElement) document.body.removeChild(rootElement as HTMLElement);
   }
 
-  const addToast = async (child: string | React.ReactNode | React.ReactNode[]) => {
-    removeToast();
+  const addToast = async (children: ToastChildren) => {
+    rootElement ? removeToast() : initRoot();
     // ~React 17
-    ReactDOM.render(<ToastContainer delay={delay} position={position}>{child}</ToastContainer>, rootElement, () => {
-      timer.current = setTimeout(removeToast, delay)
+    ReactDOM.render(<ToastContainer revealTime={revealTime} transformTime={transformTime} position={position} animation={animation}>{children}</ToastContainer>, rootElement, () => {
+      timer.current = setTimeout(removeToast, revealTime)
     });
 
     // // React 18 Migration
-    // rootReactDOM?.render(<ToastContainer delay={delay}>{child}</ToastContainer>)
-    // timer.current = setTimeout(removeToast, delay)
+    // rootReactDOM?.render(<ToastContainer revealTime={revealTime} position={position}>{child}</ToastContainer>)
+    // timer.current = setTimeout(removeToast, revealTime)
   };
 
   const removeToast = () => {
+    console.log('removeToast')
     if (timer.current) clearTimeout(timer.current as ReturnType<typeof setTimeout>);
     // ~React 17
-    ReactDOM.unmountComponentAtNode(rootElement as HTMLDivElement);
+    ReactDOM.unmountComponentAtNode(rootElement as HTMLElement);
 
     // // React 18 Migration
     // rootReactDOM?.unmount();
