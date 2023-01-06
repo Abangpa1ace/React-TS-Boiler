@@ -1,0 +1,26 @@
+name: Build production
+
+on:
+  workflow_dispatch:
+    inputs:
+      # SelectBox : Deploy type for tags
+      deploy_type:
+        type: choice
+        required: true
+        description: "배포타입: myrealtrip(정기), hotfix(핫픽스)"
+        options:
+          - myrealtrip
+          - hotfix
+      # CheckBox : Is allowed to change version after deploy
+      with_version_change:
+        type: boolean
+        description: "버전변경 포함(서버배포 확인 필수)"
+        default: true
+        
+jobs:
+  build:
+    runs-on: self-hosted
+    
+    steps:
+      - name: Test
+        run: echo test ${{ github.event.inputs.with_version_change }} ${{ github.event.inputs.with_version_change === 'true' }}
